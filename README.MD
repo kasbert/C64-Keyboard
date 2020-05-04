@@ -1,6 +1,12 @@
 ## C64 PS2/USB Keyboard
 
+This version is incompatible with the original https://github.com/Hartland/C64-Keyboard
 
+See https://easyeda.com/jarkko.sonninen/cbm-ps2b for hardware
+
+Some keymapping is still wrong
+
+---
 
 
 This project is designed to allow a PS2/USB keyboard to be used with a Commodore 64 in place of the original Commodore keyboard.

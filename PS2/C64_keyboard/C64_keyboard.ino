@@ -29,24 +29,35 @@ PS2KeyAdvanced keyboard;
 C64keyboard ckey;
 static volatile uint8_t  currkeymap = 1, flags ;
 static const C64Keymap_t *keymap = NULL;
-static volatile bool lshift=false, rshift=false, capslock=false ;
+static volatile bool lshift = false, rshift = false, capslock = false ;
 
 
 void setup() {
 
   // Configure the keyboard library
-  keyboard.begin( DATA_PIN, IRQ_PIN );
+  keyboard.begin(PS2_DATA_PIN, PS2_IRQ_PIN );
   keyboard.setNoRepeat (1);
   keyboard.setNoBreak (0);
   ckey.begin();
- if (debug) {Serial.begin( 9600 );}
+  if (debug) {
+    Serial.begin( 115200 );
+    Serial.println("C64 PS/2 keyboard");
+  }
 }
 
 
 void loop() {
-  if ( keyboard.available() )
-  {
+  if ( keyboard.available()) {
     c64key(keyboard.read());
-    
   }
+
+  int c = Serial.read();
+  if (c >= 32) {
+    Serial.print("GOT: ");
+    Serial.println(c);
+    c64key(c);
+    delay(500);
+    c64key(c | (1 << (8 + FLAG_KEYUP)));
+  }
+
 }
