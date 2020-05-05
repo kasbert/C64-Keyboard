@@ -1,5 +1,80 @@
 Commodore Keyboard MT88XX Key Bind Map
 
+Code Key
+--------
+000 1	
+001 ← (left arrow)	
+002 Control
+003 Run/Stop 
+004 Space	
+005 Commodore	
+006 Q
+007 2
+
+010 3
+011 W
+012 A
+013 left Shift
+014 Z
+015 S
+016 E
+017 4
+
+020 5
+021 R
+022 D
+023 X
+024 C
+025 F
+026 T
+027 6
+
+030 7
+031 Y
+032 G
+033 V
+034 B
+035 H
+036 U
+037 8
+
+040 9
+041 I
+042 J
+043 N
+044 M
+045 K
+046 O
+047 0
+
+050 + (plus)
+051 P
+052 L
+053 , (comma)
+054 . (period)
+055 : (colon)
+056 @ (at)
+057 – (minus)
+
+060 £ (pound)
+061 * (asterisk)
+062 ; (semicolon)
+063 / (slash)
+064 right Shift (Shift Lock)
+065 = (equal)
+066 ↑ (up arrow)
+067 Clear/Home
+
+070 Insert/Delete
+071 Return
+072 cursor left/right
+073 cursor up/down
+074 F1
+075 F3
+076 F5
+077 F7
+
+
 Position                   Key                AX2-1-0 AY2-1-0         Logic Hole Corrected
 -------------------------------------------------------------------------------------------
 0 0x00                     DEL                     000 000

@@ -35,11 +35,45 @@ void resetMT88(void) {
   currkeymap = 1;
 }
 
+// Map codes to pins
+#if 0
+// TODO may be incorrect
+uint8_t xm[] = {7, 4, 2, 6, 1, 5, 3, 0};
+uint8_t ym[] = {0, 4, 2, 7, 1, 5, 3, 6};
+#else
+/*
+
+  0 = Y4
+  1 = Y5
+  2 = Y6
+  3 = Y7
+  4 = Y0
+  5 = Y1
+  6 = Y2
+  7 = Y3
+
+  A = X5
+  B = X4
+  C = X3
+  D = X2
+  E = X1
+  F = X0
+  G = X7
+  H = X6
+
+*/
+uint8_t xm[] = {5,4,3,2,1,0,7,6};
+uint8_t ym[] = {4,5,6,7,0,1,2,3};
+#endif
+
 void setswitch(uint8_t c, uint8_t data) {
   int bitr;
   bool state;
   uint8_t x = (c >> 3) & 7;
   uint8_t y = (c & 7);
+
+  x = xm[x];
+  y = ym[y];
 
 #ifdef ANALOG_SW_AX3
   // Fix logic table hole in MT8812/16. See datasheet table
