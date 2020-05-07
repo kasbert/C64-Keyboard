@@ -1,5 +1,5 @@
 /*
-  C64keyboard.h - Commodore Keyboard library
+  C64keyboard.c - Commodore Keyboard library
 
   Copyright (c) 2019 Hartland PC LLC
   Written by Robert VanHazinga
@@ -21,25 +21,11 @@
 */
 #include "C64keyboard.h"
 
-void resetMT88(void) {
-  digitalWrite(ANALOG_SW_DATA , LOW);
-  digitalWrite(ANALOG_SW_RESET, HIGH);
-  digitalWrite(ANALOG_SW_STROBE, HIGH);
-  digitalWrite(ANALOG_SW_RESET, LOW);
-  digitalWrite(ANALOG_SW_STROBE, LOW);
-  digitalWrite(ANALOG_SW_DATA , HIGH);
-  keyboard.setLock (PS2_LOCK_SCROLL && 0);
-  capslock = false;
-  lshift = false;
-  rshift = false;
-  currkeymap = 1;
-}
-
 // Map codes to pins
 #if 0
 // TODO may be incorrect
-uint8_t xm[] = {7, 4, 2, 6, 1, 5, 3, 0};
-uint8_t ym[] = {0, 4, 2, 7, 1, 5, 3, 6};
+static const uint8_t xm[] = {7, 4, 2, 6, 1, 5, 3, 0};
+static const uint8_t ym[] = {0, 4, 2, 7, 1, 5, 3, 6};
 #else
 /*
 
@@ -62,11 +48,25 @@ uint8_t ym[] = {0, 4, 2, 7, 1, 5, 3, 6};
   H = X6
 
 */
-uint8_t xm[] = {5,4,3,2,1,0,7,6};
-uint8_t ym[] = {4,5,6,7,0,1,2,3};
+static const uint8_t xm[] = {5, 4, 3, 2, 1, 0, 7, 6};
+static const uint8_t ym[] = {4, 5, 6, 7, 0, 1, 2, 3};
 #endif
 
-void setswitch(uint8_t c, uint8_t data) {
+void C64keyboard::resetSwitch(void) {
+  digitalWrite(ANALOG_SW_DATA , LOW);
+  digitalWrite(ANALOG_SW_RESET, HIGH);
+  digitalWrite(ANALOG_SW_STROBE, HIGH);
+  digitalWrite(ANALOG_SW_RESET, LOW);
+  digitalWrite(ANALOG_SW_STROBE, LOW);
+  digitalWrite(ANALOG_SW_DATA , HIGH);
+  keyboard.setLock(0);
+  capslock = false;
+  lshift = false;
+  rshift = false;
+  currkeymap = 1;
+}
+
+void C64keyboard::setSwitch(uint8_t c, uint8_t data) {
   int bitr;
   bool state;
   uint8_t x = (c >> 3) & 7;
@@ -100,10 +100,48 @@ void setswitch(uint8_t c, uint8_t data) {
   digitalWrite( ANALOG_SW_STROBE, LOW);
 }
 
-void debugkey (uint8_t c, uint8_t flags, uint8_t kc) {
+void C64keyboard::debugkey (uint8_t c, uint8_t flags, uint8_t kc) {
   Serial.print ("C64 Keycode: 0");
   Serial.print (c, 8);
-  Serial.print ("  (ASCII Code: ");
+
+  switch (c) {
+    case IGNORE_KEYCODE:
+      Serial.print(" IGNORE_KEYCODE");
+      break;
+
+    case C_RESET:
+      Serial.print(" RESET");
+      break;
+
+    case C_RESTORE:
+      Serial.print(" RESTORE");
+      break;
+
+    case C_CAPSLOCK:
+      Serial.print(" CAPS LOCK");
+      Serial.print(capslock);
+      break;
+
+    case C_KEYMAP1:
+      Serial.print(" KEY_MAP_1");
+      break;
+
+    case C_KEYMAP2:
+      Serial.print(" KEY_MAP_2");
+      break;
+
+    case C_RSHIFT:
+      Serial.print(" RSHIFT ");
+      Serial.print(rshift);
+      break;
+
+    case C_LSHIFT:
+      Serial.print(" LSHIFT ");
+      Serial.print(lshift);
+      break;
+  }
+
+  Serial.print (" (ASCII Code: ");
   Serial.print (kc);
   Serial.print (" Hex: ");
   Serial.print (kc, HEX);
@@ -112,10 +150,7 @@ void debugkey (uint8_t c, uint8_t flags, uint8_t kc) {
   Serial.println();
 }
 
-
-
-
-void c64key(uint16_t k) {
+void C64keyboard::c64key(uint16_t k) {
   flags = k >> 8;
   uint8_t kc = k & 0xFF;
   uint8_t c = 0;
@@ -136,11 +171,6 @@ void c64key(uint16_t k) {
     }
   }
 
-  //  debug output
-  if (debug) {
-    debugkey(c, flags, kc);
-  }
-
   // Ignore extended codes
   if (kc == 250) {
     c = IGNORE_KEYCODE;
@@ -153,7 +183,7 @@ void c64key(uint16_t k) {
       break;
 
     case C_RESET:
-      resetMT88();
+      resetSwitch();
       break;
 
     case C_RESTORE:
@@ -163,75 +193,71 @@ void c64key(uint16_t k) {
       } else {
         pinMode (NMI_PIN, INPUT);
       }
-      Serial.println("RESTORE");
       break;
 
     case C_CAPSLOCK:
       capslock = !capslock;
-      setswitch(C_LSHIFT, capslock);
-      Serial.print("CAPS LOCK ");
-      Serial.println(capslock);
+      setSwitch(C_LSHIFT, capslock | lshift);
       break;
 
     case C_KEYMAP1:
       if (data) {
         currkeymap = 1;
-        keyboard.setLock (0); // FIXME resets all leds
-        Serial.println("KEY_MAP_1");
+        keyboard.setLock (keyboard.getLock() & ~PS2_LOCK_SCROLL);
       }
       break;
 
     case C_KEYMAP2:
       if (data) {
         currkeymap = 2;
-        keyboard.setLock (PS2_LOCK_SCROLL);
-        Serial.println("KEY_MAP_2");
+        keyboard.setLock (keyboard.getLock() | PS2_LOCK_SCROLL);
       }
       break;
 
     case C_RSHIFT:
       rshift = data;
-      setswitch(c, data);
-      Serial.print("C_RSHIFT ");
-      Serial.println(data);
+      setSwitch(c, data);
       break;
 
     case C_LSHIFT:
       lshift = data;
-      setswitch(c, lshift | capslock);
-      Serial.print("C_LSHIFT ");
-      Serial.println(lshift | capslock);
+      setSwitch(c, lshift | capslock);
       break;
 
     default:
       if (capslock && (rshift || lshift)) {
         // Differential shift conversion during key press
         if (data) {
-          setswitch(C_RSHIFT, LOW);
-          setswitch(C_LSHIFT, LOW);
+          setSwitch(C_RSHIFT, LOW);
+          setSwitch(C_LSHIFT, LOW);
         } else {
-          setswitch(C_LSHIFT, lshift | capslock);
-          setswitch(C_RSHIFT, rshift);
+          setSwitch(C_LSHIFT, lshift | capslock);
+          setSwitch(C_RSHIFT, rshift);
         }
       } else {
         // Auto shift for arrows etc.
         if (c & C_SHIFT_MASK) {
           if (data) {
-            setswitch(C_RSHIFT, HIGH);
+            setSwitch(C_RSHIFT, HIGH);
           } else {
-            setswitch(C_RSHIFT, rshift);
+            setSwitch(C_RSHIFT, rshift);
           }
         }
       }
-      setswitch(c, data);
+      setSwitch(c, data);
       break;
+  }
+
+  //  debug output
+  if (debug) {
+    debugkey(c, flags, kc);
   }
 
 }
 
-void C64keyboard::begin(const C64Keymap_t &map) {
-
-  keymap = &map;
+void C64keyboard::begin(const PS2KeyAdvanced &keyboard, const C64Keymap_t &map) {
+  this->keyboard = keyboard;
+  this->keymap = &map;
 
   // initialize the pins
 
@@ -251,10 +277,9 @@ void C64keyboard::begin(const C64Keymap_t &map) {
   pinMode( ANALOG_SW_DATA, OUTPUT);  //MT88XX data
   pinMode( NMI_PIN, INPUT); // C64 NMI
 
-  resetMT88();
-
-
+  resetSwitch();
 }
+
 C64keyboard::C64keyboard() {
   // nothing to do here, begin() does it all
 }

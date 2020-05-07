@@ -35,11 +35,6 @@
 #include "keymapping.h"
 
 
-
-#define debug   true  //Set true for serial monitor of C64 keycodes and PS/2 keycodes
-
-
-
 #define MT8808  false    // Set true if using MT8808 and false if using MT8812 ot MT8816
 
 #if 0
@@ -88,18 +83,18 @@
 #endif
 
 /*
-//Scan code value to enable a key map. Default is key map 1.
-#define KEY_MAP_1        0x69 // (DEC 105) F9
-#define KEY_MAP_2       0x6A // (DEC 106) F10
+  //Scan code value to enable a key map. Default is key map 1.
+  #define KEY_MAP_1        0x69 // (DEC 105) F9
+  #define KEY_MAP_2       0x6A // (DEC 106) F10
 
-// Key map value to reset the MT88xx chip
-#define MT_RESET        0x6C // (DEC 108) F12 activates MT88XX reset
+  // Key map value to reset the MT88xx chip
+  #define MT_RESET        0x6C // (DEC 108) F12 activates MT88XX reset
 
 
-#define RESTORE_KEY       0x1D // (DEC 29) Tab acts as Restore key
+  #define RESTORE_KEY       0x1D // (DEC 29) Tab acts as Restore key
 
-// Key map value for capslock
-#define CAPSLOCK_KEY    0x03 // (DEC 3) CapsLock key 
+  // Key map value for capslock
+  #define CAPSLOCK_KEY    0x03 // (DEC 3) CapsLock key
 */
 
 //Key map value to ignore key press
@@ -115,8 +110,19 @@ class C64keyboard {
 
     C64keyboard();
 
+    void begin(const PS2KeyAdvanced &keyboard, const C64Keymap_t &map = C64Keymap_main);
 
-    static void begin(const C64Keymap_t &map = C64Keymap_main);
+    void resetSwitch(void);
+    void setSwitch(uint8_t c, uint8_t data);
+    void c64key(uint16_t k);
 
+    // Set true for serial monitor of C64 keycodes and PS/2 keycodes
+    bool debug = false;
+    void debugkey (uint8_t c, uint8_t flags, uint8_t kc);
+
+    PS2KeyAdvanced &keyboard;
+    volatile uint8_t  currkeymap = 1, flags ;
+    const C64Keymap_t *keymap = NULL;
+    volatile bool lshift = false, rshift = false, capslock = false ;
 };
 #endif

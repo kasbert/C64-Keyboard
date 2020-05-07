@@ -21,16 +21,13 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <avr/wdt.h>
 #include <PS2KeyAdvanced.h>
 #include "C64keyboard.h"
 
 
 PS2KeyAdvanced keyboard;
 C64keyboard ckey;
-static volatile uint8_t  currkeymap = 1, flags ;
-static const C64Keymap_t *keymap = NULL;
-static volatile bool lshift = false, rshift = false, capslock = false ;
-
 
 void setup() {
 
@@ -38,8 +35,9 @@ void setup() {
   keyboard.begin(PS2_DATA_PIN, PS2_IRQ_PIN );
   keyboard.setNoRepeat (1);
   keyboard.setNoBreak (0);
-  ckey.begin();
-  if (debug) {
+  ckey.debug = true;
+  ckey.begin(keyboard);
+  if (ckey.debug) {
     Serial.begin( 115200 );
     Serial.println("C64 PS/2 keyboard");
   }
@@ -47,17 +45,19 @@ void setup() {
 
 
 void loop() {
+  wdt_enable(WDTO_1S);     // enable the watchdog
+  
   if ( keyboard.available()) {
-    c64key(keyboard.read());
+    ckey.c64key(keyboard.read());
   }
-
+  
   int c = Serial.read();
   if (c >= 32) {
     Serial.print("GOT: ");
     Serial.println(c);
-    c64key(c);
+    ckey.c64key(c);
     delay(500);
-    c64key(c | (1 << (8 + FLAG_KEYUP)));
+    ckey.c64key(c | (1 << (8 + FLAG_KEYUP)));
   }
-
+  wdt_reset();
 }
